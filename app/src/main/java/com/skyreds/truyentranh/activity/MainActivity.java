@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
@@ -66,12 +67,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ArrayList<Comic> lstHotTrend;
     private ArrayList<Comic> lstHistory;
     private BannerSlider mSliderBanner;
-
     private ComicAdapter newUpdateAdapter;
-
+    private CardView cardView;
     private ShimmerRecyclerView rv_NewUpdate;
     private ShimmerRecyclerView rv_HotTrend;
-    private ShimmerRecyclerView rv_Boy;
     private ShimmerRecyclerView rv_History;
     private AutoCompleteTextView mEditAuto;
     private ArrayList<String> urlBanner;
@@ -133,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         rv_NewUpdate = findViewById(R.id.rv_NewUpdate);
         rv_HotTrend = findViewById(R.id.rv_HotTrend);
         rv_History = findViewById(R.id.rv_History);
+        cardView = findViewById(R.id.cardView);
         Button mTheLoaiBtn = findViewById(R.id.btn_TheLoai);
         mTheLoaiBtn.setOnClickListener(this);
         Button mBXHBtn = findViewById(R.id.btn_BXH);
@@ -331,121 +331,81 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void run() {
 
-
                 RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
                 SharedPreferences sharedPreferences = getSharedPreferences("history", Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
                 Log.d("asdasdjkhaskjd", "HistoryComic: " + sharedPreferences.getStringSet("history", new HashSet<String>()));
-
                 List<String> list = new ArrayList<>(sharedPreferences.getStringSet("history", new HashSet<String>()));
-                for (int i = 0; i < list.size(); i++) {
-                    final String url = list.get(i);
-                    StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
-                        @Override
-                        public void onResponse(String response) {
-                            Document document = Jsoup.parse(response);
-                            Log.d("asdasdasd", "onResponse: " + document);
+                if (list != null) {
+                    rv_History.setVisibility(View.VISIBLE);
+                    for (int i = 0; i < list.size(); i++) {
+                        final String url = list.get(i);
+                        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+                            @Override
+                            public void onResponse(String response) {
+                                Document document = Jsoup.parse(response);
+                                Log.d("asdasdasd", "onResponse: " + document);
 
-                            //load list chapter
-                            Elements chapx = document.select("div.list-chapter");
-                            Elements chap = chapx.select("li.row");
-                            Elements aElements = chap.select("a");
-                                          //load thumbnail
-                            Elements contents = document.select("div.detail-info");
-                            Element image = contents.select("img").first();
-                            String thumb = image.attr("src");
-                            Elements tieude = document.select("article#item-detail");
-                            Element tit = tieude.select("h1").first();
-                            String title = tit.text();
-                            Elements author;
-                            Element tac;
-                            Element view;
-                            author = document.select("div.col-xs-8.col-info");
-                            tac = author.select("p").get(1);
-                            view = author.select("p").get(7);
+                                //load list chapter
+                                Elements chapx = document.select("div.list-chapter");
+                                Elements chap = chapx.select("li.row");
+                                Elements aElements = chap.select("a");
+                                //load thumbnail
+                                Elements contents = document.select("div.detail-info");
+                                Element image = contents.select("img").first();
+                                String thumb = image.attr("src");
+                                Elements tieude = document.select("article#item-detail");
+                                Element tit = tieude.select("h1").first();
+                                String title = tit.text();
+                                Elements author;
+                                Element tac;
+                                Element view;
+                                author = document.select("div.col-xs-8.col-info");
+                                tac = author.select("p").get(1);
+                                view = author.select("p").get(7);
 
-                            String test = tac.text().trim();
-                            Log.e("TEst=", "'" + test + "'");
-                            if (test.equals("Tác giả")) {
-                                Log.e("TEst:", "true");
-                                view = author.select("p").get(8);
-                            } else {
-                                Log.e("TEst:", "false");
-                            }
-//                        tacgia = tac.text();
-//                        mTvAuthor.setText(tacgia);
-
-                       /* trangthai = trang.text();
-                        mTvTrangThai.setText(trangthai);
-
-                        theloai = the.text();
-                        mTvTheLoai.setText(theloai);
-
-                        theodoi = view.text();
-                        mViewTv.setText(theodoi);*/
-
-                            /*Nội dung*/
-                            Elements noidung = document.select("div.detail-content");
-                            Element cont = noidung.select("p").first();
-//                        content = cont.text();
-//                        mRvChapter.post(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                int i = restoringPreferences();
-//                                if (i == 2) {
-//                                    adapter = new ChapterAdapter(getApplicationContext(), lstChapNormal);
-//                                    RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 3);
-//                                    mRvChapter.setLayoutManager(mLayoutManager);
-//                                    mRvChapter.setHasFixedSize(true);
-//                                    mRvChapter.setItemAnimator(new DefaultItemAnimator());
-//                                    adapter.notifyDataSetChanged();
-//                                    mRvChapter.setAdapter(adapter);
-//                                }
-//                                if (i == 1) {
-//                                    adapter = new ChapterAdapter(getApplicationContext(), lstChapter);
-//                                    RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 3);
-//                                    mRvChapter.setLayoutManager(mLayoutManager);
-//                                    mRvChapter.setHasFixedSize(true);
-//                                    mRvChapter.setItemAnimator(new DefaultItemAnimator());
-//                                    adapter.notifyDataSetChanged();
-//                                    mRvChapter.setAdapter(adapter);
-//                                }
-//                            }
-//                        });
-
-                            lstHistory.add(new Comic(title, view.text(), thumb, aElements.get(0).text(), url));
-                            rv_History.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    newUpdateAdapter = new ComicAdapter(MainActivity.this, lstHistory);
-                                    LinearLayoutManager horizontalLayout = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.HORIZONTAL, false);
-                                    rv_History.setLayoutManager(horizontalLayout);
-                                    rv_History.setHasFixedSize(true);
-                                    rv_History.setItemAnimator(new DefaultItemAnimator());
-                                    rv_History.setAdapter(newUpdateAdapter);
-                                    newUpdateAdapter.notifyDataSetChanged();
-                                    rv_History.hideShimmerAdapter();
-
+                                String test = tac.text().trim();
+                                Log.e("TEst=", "'" + test + "'");
+                                if (test.equals("Tác giả")) {
+                                    Log.e("TEst:", "true");
+                                    view = author.select("p").get(8);
+                                } else {
+                                    Log.e("TEst:", "false");
                                 }
-                            });
+                                lstHistory.add(new Comic(title, view.text(), thumb, aElements.get(0).text(), url));
+                                rv_History.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        newUpdateAdapter = new ComicAdapter(MainActivity.this, lstHistory);
+                                        LinearLayoutManager horizontalLayout = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.HORIZONTAL, false);
+                                        rv_History.setLayoutManager(horizontalLayout);
+                                        rv_History.setHasFixedSize(true);
+                                        rv_History.setItemAnimator(new DefaultItemAnimator());
+                                        rv_History.setAdapter(newUpdateAdapter);
+                                        newUpdateAdapter.notifyDataSetChanged();
+                                        rv_History.hideShimmerAdapter();
 
-                        }
-                    }, new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                        }
-                    });
-                    stringRequest.setRetryPolicy(new DefaultRetryPolicy(
-                            150000,
-                            DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
-                    requestQueue.add(stringRequest);
+                                    }
+                                });
 
+                            }
+                        }, new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                            }
+                        });
+                        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
+                                150000,
+                                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+                        requestQueue.add(stringRequest);
+
+                    }
+                } else {
+                    rv_History.setVisibility(View.GONE);
                 }
             }
         }).start();
     }
-
 
 
     @Override

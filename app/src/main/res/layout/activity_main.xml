@@ -227,6 +227,7 @@
             </android.support.v7.widget.CardView>
             <!--Truyen nu-->
             <android.support.v7.widget.CardView
+                android:id="@+id/cardView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="@dimen/margin"
@@ -275,6 +276,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_margin="4dp"
+                        android:visibility="gone"
                         app:shimmer_demo_angle="20"
                         app:shimmer_demo_child_count="1"
                         app:shimmer_demo_layout="@layout/row_shimmer"
@@ -282,18 +284,7 @@
                         app:shimmer_demo_shimmer_color="@color/background" />
                 </LinearLayout>
             </android.support.v7.widget.CardView>
-            <!--Truyen nam-->
 
-            <android.support.v7.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/margin"
-                android:layout_marginRight="@dimen/margin"
-                android:layout_marginBottom="@dimen/margin"
-                app:cardCornerRadius="@dimen/border_card"
-                app:cardElevation="@dimen/border_card">
-
-            </android.support.v7.widget.CardView>
         </LinearLayout>
 
     </android.support.v4.widget.NestedScrollView>
