@@ -124,10 +124,6 @@ public class ComicAdapter extends RecyclerView.Adapter<ComicAdapter.ViewHolder> 
 
                     }
 
-                    @Override
-                    public void onHistory(List<String> stringList) {
-
-                    }
                 });
 
             }

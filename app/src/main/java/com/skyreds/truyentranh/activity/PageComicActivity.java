@@ -90,7 +90,6 @@ public class PageComicActivity extends AppCompatActivity implements View.OnClick
         myRealm = Realm.getDefaultInstance();
         Intent intent = getIntent();
         URL_COMIC = intent.getStringExtra("url");
-        Log.d("owdaynehihihihi", "onClick: "+URL_COMIC);
 
         ArrayList<String> lstSpinner = new ArrayList<>();
         lstSpinner.add("Sắp xếp");
@@ -139,7 +138,8 @@ public class PageComicActivity extends AppCompatActivity implements View.OnClick
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
+//        super.onBackPressed();
+        finish();
     }
 
     private void addToDB(String title, String chapter, String thumb, String view, String url) {
@@ -190,8 +190,6 @@ public class PageComicActivity extends AppCompatActivity implements View.OnClick
         new Thread(new Runnable() {
             @Override
             public void run() {
-
-
                 RequestQueue requestQueue = Volley.newRequestQueue(PageComicActivity.this);
                 StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
                     @Override
@@ -202,6 +200,7 @@ public class PageComicActivity extends AppCompatActivity implements View.OnClick
                         Elements chap = chapx.select("li.row");
                         Elements aElements = chap.select("a");
                         for (Element element : aElements) {
+
                             String urlChap = element.attr("href");
                             String nameChap = element.text();
                             lstChapNormal.add(new Chapter(nameChap, urlChap));

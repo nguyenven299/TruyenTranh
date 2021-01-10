@@ -80,10 +80,7 @@ public class ComicCategoryAdapter extends RecyclerView.Adapter<ComicCategoryAdap
 
                     }
 
-                    @Override
-                    public void onHistory(List<String> stringList) {
 
-                    }
                 });
             }
         });

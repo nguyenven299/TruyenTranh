@@ -6,9 +6,12 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
@@ -28,9 +31,13 @@ import com.android.volley.toolbox.Volley;
 import com.cooltechworks.views.shimmer.ShimmerRecyclerView;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.skyreds.truyentranh.R;
+import com.skyreds.truyentranh.adapter.ChapterAdapter;
+import com.skyreds.truyentranh.adapter.ComicViewAdapter;
 import com.skyreds.truyentranh.adapter.SearchAdapter;
 import com.skyreds.truyentranh.adapter.ComicAdapter;
+import com.skyreds.truyentranh.model.Chapter;
 import com.skyreds.truyentranh.model.Comic;
+import com.skyreds.truyentranh.model.Image;
 import com.skyreds.truyentranh.model.Search;
 import com.skyreds.truyentranh.until.CheckConnection;
 import com.skyreds.truyentranh.until.Link;
@@ -41,6 +48,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -56,8 +64,7 @@ import ss.com.bannerslider.views.BannerSlider;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, TextWatcher {
     private ArrayList<Comic> lstNewUpdate;
     private ArrayList<Comic> lstHotTrend;
-    private ArrayList<Comic> lstBoy;
-    private ArrayList<Comic> lstGirl;
+    private ArrayList<Comic> lstHistory;
     private BannerSlider mSliderBanner;
 
     private ComicAdapter newUpdateAdapter;
@@ -65,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ShimmerRecyclerView rv_NewUpdate;
     private ShimmerRecyclerView rv_HotTrend;
     private ShimmerRecyclerView rv_Boy;
-    private ShimmerRecyclerView rv_Girl;
+    private ShimmerRecyclerView rv_History;
     private AutoCompleteTextView mEditAuto;
     private ArrayList<String> urlBanner;
     private SearchAdapter adapterSearch;
@@ -80,19 +87,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
+        loadComicNewUpdate();
+        loadComicHot();
+        loadComicHistory();
         checkConnection = new CheckConnection(MainActivity.this, mRoot);
         checkConnection.checkConnection();
 
         FirebaseMessaging.getInstance();
 
         rv_NewUpdate.showShimmerAdapter();
-        rv_Girl.showShimmerAdapter();
-        rv_Boy.showShimmerAdapter();
+        rv_History.showShimmerAdapter();
         rv_HotTrend.showShimmerAdapter();
-        loadComicNewUpdate();
-        loadComicHot();
-        loadComicBoy();
-        loadComicGirl();
+
         Realm.init(this);
         mEditAuto.addTextChangedListener(this);
         adapterSearch = new SearchAdapter(this, R.layout.item_custom_search, lstSearch);
@@ -109,20 +115,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        loadComicHistory();
+
+    }
 
     private void initView() {
         lstNewUpdate = new ArrayList<>();
         lstHotTrend = new ArrayList<>();
-        lstBoy = new ArrayList<>();
-        lstGirl = new ArrayList<>();
+        lstHistory = new ArrayList<>();
         banners = new ArrayList<>();
         urlBanner = new ArrayList<>();
         lstSearch = new ArrayList<>();
         mSliderBanner = findViewById(R.id.banner_slider);
         rv_NewUpdate = findViewById(R.id.rv_NewUpdate);
         rv_HotTrend = findViewById(R.id.rv_HotTrend);
-        rv_Boy = findViewById(R.id.rv_Boy);
-        rv_Girl = findViewById(R.id.rv_Girl);
+        rv_History = findViewById(R.id.rv_History);
         Button mTheLoaiBtn = findViewById(R.id.btn_TheLoai);
         mTheLoaiBtn.setOnClickListener(this);
         Button mBXHBtn = findViewById(R.id.btn_BXH);
@@ -137,8 +147,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mTruyenhotBtn.setOnClickListener(this);
         Button mTruyenCGBtn = findViewById(R.id.btn_truyenCG);
         mTruyenCGBtn.setOnClickListener(this);
-        Button mTruyenCTBtn = findViewById(R.id.btn_truyenCT);
-        mTruyenCTBtn.setOnClickListener(this);
     }
 
     private void loadComicNewUpdate() {
@@ -147,6 +155,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void run() {
                 RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+
+
                 StringRequest stringRequest = new StringRequest(Request.Method.GET, Link.URL_HOMEPAGE, new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
@@ -230,7 +240,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
                         DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
                 requestQueue.add(stringRequest);
-
             }
         }).start();
 
@@ -316,8 +325,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }).start();
     }
 
-    private void loadComicGirl() {
-        lstGirl.clear();
+    private void loadComicHistory() {
+        lstHistory.clear();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -326,160 +335,116 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
                 SharedPreferences sharedPreferences = getSharedPreferences("history", Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
+                Log.d("asdasdjkhaskjd", "HistoryComic: " + sharedPreferences.getStringSet("history", new HashSet<String>()));
+
                 List<String> list = new ArrayList<>(sharedPreferences.getStringSet("history", new HashSet<String>()));
+                for (int i = 0; i < list.size(); i++) {
+                    final String url = list.get(i);
+                    StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+                            Document document = Jsoup.parse(response);
+                            Log.d("asdasdasd", "onResponse: " + document);
 
-                StringRequest stringRequest = new StringRequest(Request.Method.GET, Link.URL_GIRL, new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        Log.d("asdasdasd", "onResponse: "+response);
-                        Document document = Jsoup.parse(response);
-                        Elements all = document.select("div#ctl00_divCenter");
-                        Elements sub = all.select(".item");
-                        for (Element element : sub) {
-                            Element hinhanh = element.getElementsByTag("img").get(0);
-                            Element linktruyen = element.getElementsByTag("a").get(0);
-                            Element sochuong = element.getElementsByTag("a").get(2);
-                            Element tentruyen = element.getElementsByTag("h3").get(0);
-                            Element luotxem = element.getElementsByTag("span").get(0);
-                            Element luotxem2 = null;
-                            try {
-                                luotxem2 = element.getElementsByTag("span").get(1);
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
-                            String thumb;
-                            String thumb1 = hinhanh.attr("src");
-                            String thumb2 = hinhanh.attr("data-original");
-                            if (thumb2.equals("")) {
-                                thumb = thumb1;
+                            //load list chapter
+                            Elements chapx = document.select("div.list-chapter");
+                            Elements chap = chapx.select("li.row");
+                            Elements aElements = chap.select("a");
+                                          //load thumbnail
+                            Elements contents = document.select("div.detail-info");
+                            Element image = contents.select("img").first();
+                            String thumb = image.attr("src");
+                            Elements tieude = document.select("article#item-detail");
+                            Element tit = tieude.select("h1").first();
+                            String title = tit.text();
+                            Elements author;
+                            Element tac;
+                            Element view;
+                            author = document.select("div.col-xs-8.col-info");
+                            tac = author.select("p").get(1);
+                            view = author.select("p").get(7);
+
+                            String test = tac.text().trim();
+                            Log.e("TEst=", "'" + test + "'");
+                            if (test.equals("Tác giả")) {
+                                Log.e("TEst:", "true");
+                                view = author.select("p").get(8);
                             } else {
-                                thumb = thumb2;
+                                Log.e("TEst:", "false");
                             }
-                            String name = tentruyen.text();
-                            String link = linktruyen.attr("href");
-                            String view;
-                            if (luotxem.text().equals("")) {
-                                view = luotxem2.text();
-                            } else {
-                                view = luotxem.text();
-                            }
-                            String string = view;
-                            String[] parts = string.split(" ");
-                            String viewCount = parts[0];
-                            if (thumb.startsWith("http:") || thumb.startsWith("https:")) {
-                            } else {
-                                thumb = "http:" + thumb;
-                            }
-                            String chapter = sochuong.text();
-                            lstGirl.add(new Comic(name, viewCount, thumb, chapter, link));
+//                        tacgia = tac.text();
+//                        mTvAuthor.setText(tacgia);
+
+                       /* trangthai = trang.text();
+                        mTvTrangThai.setText(trangthai);
+
+                        theloai = the.text();
+                        mTvTheLoai.setText(theloai);
+
+                        theodoi = view.text();
+                        mViewTv.setText(theodoi);*/
+
+                            /*Nội dung*/
+                            Elements noidung = document.select("div.detail-content");
+                            Element cont = noidung.select("p").first();
+//                        content = cont.text();
+//                        mRvChapter.post(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                int i = restoringPreferences();
+//                                if (i == 2) {
+//                                    adapter = new ChapterAdapter(getApplicationContext(), lstChapNormal);
+//                                    RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 3);
+//                                    mRvChapter.setLayoutManager(mLayoutManager);
+//                                    mRvChapter.setHasFixedSize(true);
+//                                    mRvChapter.setItemAnimator(new DefaultItemAnimator());
+//                                    adapter.notifyDataSetChanged();
+//                                    mRvChapter.setAdapter(adapter);
+//                                }
+//                                if (i == 1) {
+//                                    adapter = new ChapterAdapter(getApplicationContext(), lstChapter);
+//                                    RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 3);
+//                                    mRvChapter.setLayoutManager(mLayoutManager);
+//                                    mRvChapter.setHasFixedSize(true);
+//                                    mRvChapter.setItemAnimator(new DefaultItemAnimator());
+//                                    adapter.notifyDataSetChanged();
+//                                    mRvChapter.setAdapter(adapter);
+//                                }
+//                            }
+//                        });
+
+                            lstHistory.add(new Comic(title, view.text(), thumb, aElements.get(0).text(), url));
+                            rv_History.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    newUpdateAdapter = new ComicAdapter(MainActivity.this, lstHistory);
+                                    LinearLayoutManager horizontalLayout = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.HORIZONTAL, false);
+                                    rv_History.setLayoutManager(horizontalLayout);
+                                    rv_History.setHasFixedSize(true);
+                                    rv_History.setItemAnimator(new DefaultItemAnimator());
+                                    rv_History.setAdapter(newUpdateAdapter);
+                                    newUpdateAdapter.notifyDataSetChanged();
+                                    rv_History.hideShimmerAdapter();
+
+                                }
+                            });
+
                         }
-                        rv_Girl.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                newUpdateAdapter = new ComicAdapter(MainActivity.this, lstGirl);
-                                LinearLayoutManager horizontalLayout = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.HORIZONTAL, false);
-                                rv_Girl.setLayoutManager(horizontalLayout);
-                                rv_Girl.setHasFixedSize(true);
-                                rv_Girl.setItemAnimator(new DefaultItemAnimator());
-                                rv_Girl.setAdapter(newUpdateAdapter);
-                                rv_Girl.hideShimmerAdapter();
-                            }
-                        });
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                    }
-                });
-                stringRequest.setRetryPolicy(new DefaultRetryPolicy(
-                        150000,
-                        DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                        DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
-                requestQueue.add(stringRequest);
+                    }, new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                        }
+                    });
+                    stringRequest.setRetryPolicy(new DefaultRetryPolicy(
+                            150000,
+                            DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+                    requestQueue.add(stringRequest);
 
+                }
             }
         }).start();
     }
-
-    private void loadComicBoy() {
-        lstBoy.clear();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
-                StringRequest stringRequest = new StringRequest(Request.Method.GET, Link.URL_BOY, new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        Document document = Jsoup.parse(response);
-                        Elements all = document.select("div#ctl00_divCenter");
-                        Elements sub = all.select(".item");
-                        for (Element element : sub) {
-                            Element hinhanh = element.getElementsByTag("img").get(0);
-                            Element linktruyen = element.getElementsByTag("a").get(0);
-                            Element sochuong = element.getElementsByTag("a").get(2);
-                            Element tentruyen = element.getElementsByTag("h3").get(0);
-                            Element luotxem = element.getElementsByTag("span").get(0);
-                            Element luotxem2 = null;
-                            try {
-                                luotxem2 = element.getElementsByTag("span").get(1);
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
-                            String thumb;
-                            String thumb1 = hinhanh.attr("src");
-                            String thumb2 = hinhanh.attr("data-original");
-                            if (thumb2.equals("")) {
-                                thumb = thumb1;
-                            } else {
-                                thumb = thumb2;
-                            }
-                            String name = tentruyen.text();
-                            String link = linktruyen.attr("href");
-                            String view;
-                            if (luotxem.text().equals("")) {
-                                view = luotxem2.text();
-                            } else {
-                                view = luotxem.text();
-                            }
-                            String string = view;
-                            String[] parts = string.split(" ");
-                            String viewCount = parts[0];
-                            if (thumb.startsWith("http:") || thumb.startsWith("https:")) {
-                            } else {
-                                thumb = "http:" + thumb;
-                            }
-                            String chapter = sochuong.text();
-                            lstBoy.add(new Comic(name, viewCount, thumb, chapter, link));
-                        }
-                        rv_Boy.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                newUpdateAdapter = new ComicAdapter(MainActivity.this, lstBoy);
-                                LinearLayoutManager horizontalLayout = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.HORIZONTAL, false);
-                                rv_Boy.setLayoutManager(horizontalLayout);
-                                rv_Boy.setHasFixedSize(true);
-                                rv_Boy.setItemAnimator(new DefaultItemAnimator());
-                                rv_Boy.setAdapter(newUpdateAdapter);
-                                rv_Boy.hideShimmerAdapter();
-                            }
-                        });
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                    }
-                });
-                stringRequest.setRetryPolicy(new DefaultRetryPolicy(
-                        150000,
-                        DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                        DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
-                requestQueue.add(stringRequest);
-
-            }
-        }).start();
-
-    }
-
 
 
 
@@ -511,16 +476,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_hotCommic:// TODO 18/10/26
                 more.putExtra("url", Link.URL_HOT_TREND);
                 more.putExtra("title", "Truyện hot");
-                startActivity(more);
-                break;
-            case R.id.btn_truyenCG:// TODO 18/10/26
-                more.putExtra("url", Link.URL_GIRL);
-                more.putExtra("title", "Truyện con gái thích");
-                startActivity(more);
-                break;
-            case R.id.btn_truyenCT:// TODO 18/10/26
-                more.putExtra("url", Link.URL_HOMEPAGE);
-                more.putExtra("title", "Truyện con trai thích");
                 startActivity(more);
                 break;
             default:

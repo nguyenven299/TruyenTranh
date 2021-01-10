@@ -27,12 +27,12 @@ public class History {
 
         void onFail(String fail);
 
-        void onHistory(List<String> stringList);
     }
 
     public void HistoryComic(Context context, String url, IHistory iHistory) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("history", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
+
         if (sharedPreferences.getStringSet("history", new HashSet<String>()) == null) {
             setA.add(url);
             editor.putStringSet("history", setA);

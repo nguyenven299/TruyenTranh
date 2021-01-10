@@ -120,10 +120,6 @@ public class LoadmoreAdapter extends RecyclerView.Adapter<LoadmoreAdapter.ViewHo
 
                     }
 
-                    @Override
-                    public void onHistory(List<String> stringList) {
-
-                    }
                 });
             }
         });

@@ -92,10 +92,7 @@ public class ComicFavoriteAdapter extends RecyclerView.Adapter<ComicFavoriteAdap
 
                     }
 
-                    @Override
-                    public void onHistory(List<String> stringList) {
 
-                    }
                 });
             }
         });
