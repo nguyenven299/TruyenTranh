@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -79,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private List<Banner> banners;
     private RelativeLayout mRoot;
     private CheckConnection checkConnection;
+    private Button mTruyenCGBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -145,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mTruyenmoiBtn.setOnClickListener(this);
         Button mTruyenhotBtn = findViewById(R.id.btn_hotCommic);
         mTruyenhotBtn.setOnClickListener(this);
-        Button mTruyenCGBtn = findViewById(R.id.btn_truyenCG);
+        mTruyenCGBtn = findViewById(R.id.btn_truyenCG);
         mTruyenCGBtn.setOnClickListener(this);
     }
 
@@ -332,9 +334,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void run() {
 
                 RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
-                SharedPreferences sharedPreferences = getSharedPreferences("history", Context.MODE_PRIVATE);
-                Log.d("asdasdjkhaskjd", "HistoryComic: " + sharedPreferences.getStringSet("history", new HashSet<String>()));
+                final SharedPreferences sharedPreferences = getSharedPreferences("history", Context.MODE_PRIVATE);
                 List<String> list = new ArrayList<>(sharedPreferences.getStringSet("history", new HashSet<String>()));
+                final String title1 = null,view1=null,thumb1=null,chap1=null,url1=null;
                 if (list != null) {
                     rv_History.setVisibility(View.VISIBLE);
                     for (int i = 0; i < list.size(); i++) {
@@ -362,7 +364,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 author = document.select("div.col-xs-8.col-info");
                                 tac = author.select("p").get(1);
                                 view = author.select("p").get(7);
-
                                 String test = tac.text().trim();
                                 Log.e("TEst=", "'" + test + "'");
                                 if (test.equals("Tác giả")) {
@@ -372,20 +373,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     Log.e("TEst:", "false");
                                 }
                                 lstHistory.add(new Comic(title, view.text(), thumb, aElements.get(0).text(), url));
-                                rv_History.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        newUpdateAdapter = new ComicAdapter(MainActivity.this, lstHistory);
-                                        LinearLayoutManager horizontalLayout = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.HORIZONTAL, false);
-                                        rv_History.setLayoutManager(horizontalLayout);
-                                        rv_History.setHasFixedSize(true);
-                                        rv_History.setItemAnimator(new DefaultItemAnimator());
-                                        rv_History.setAdapter(newUpdateAdapter);
-                                        newUpdateAdapter.notifyDataSetChanged();
-                                        rv_History.hideShimmerAdapter();
-
-                                    }
-                                });
 
                             }
                         }, new Response.ErrorListener() {
@@ -400,8 +387,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         requestQueue.add(stringRequest);
 
                     }
+                    mTruyenCGBtn.setVisibility(View.VISIBLE);
+                    mTruyenCGBtn.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            sharedPreferences.edit().clear().apply();
+                        }
+                    });
+                    rv_History.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            newUpdateAdapter = new ComicAdapter(MainActivity.this, lstHistory);
+                            LinearLayoutManager horizontalLayout = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.HORIZONTAL, false);
+                            rv_History.setLayoutManager(horizontalLayout);
+                            rv_History.setHasFixedSize(true);
+                            rv_History.setItemAnimator(new DefaultItemAnimator());
+                            rv_History.setAdapter(newUpdateAdapter);
+                            newUpdateAdapter.notifyDataSetChanged();
+                            rv_History.hideShimmerAdapter();
+
+                        }
+                    });
                 } else {
                     rv_History.setVisibility(View.GONE);
+                    mTruyenCGBtn.setVisibility(View.GONE);
+
                 }
             }
         }).start();
@@ -438,6 +448,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 more.putExtra("title", "Truyện hot");
                 startActivity(more);
                 break;
+
             default:
                 break;
         }
